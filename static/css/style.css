@@ -1,0 +1,29 @@
+body {
+    background-color: #f4f6f9;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.display-6 {
+    opacity: 0.7;
+}

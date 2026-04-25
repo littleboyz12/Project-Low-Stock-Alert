@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Inventory{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-box-seam"></i> Smart Inventory
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {% if request.session.get('user') %}
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/products"><i class="bi bi-box"></i> Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/categories"><i class="bi bi-tags"></i> Categories</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/stock"><i class="bi bi-arrow-left-right"></i> Stock Movement</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/alerts"><i class="bi bi-exclamation-triangle"></i> Alerts</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                <!-- Notification Bell -->
+                <div class="dropdown me-3">
+                    <a class="btn btn-dark position-relative" href="#" id="notifDropdown"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill text-white" style="font-size: 1.2rem;"></i>
+                        <span id="notif-badge"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                            0
+                            <span class="visually-hidden">unread notifications</span>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifDropdown"
+                        style="min-width: 320px; max-height: 400px; overflow-y: auto;">
+                        <li class="dropdown-header d-flex justify-content-between align-items-center">
+                            <strong>Notifications</strong>
+                            <button type="button" class="btn btn-sm btn-link p-0" onclick="markAllRead(event)">
+                                Mark all read
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li id="notif-empty" class="text-center text-muted small py-3">
+                            No new notifications
+                        </li>
+                        <div id="notif-list"></div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center small" href="/stock">View all movements</a></li>
+                    </ul>
+                </div>
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-circle"></i> {{ request.session.get('user') }}
+                </span>
+                <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+            </div>
+            {% else %}
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/login"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+                </li>
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- Toast Container (pop-up notifications) -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100; margin-top: 60px;" id="toast-container"></div>
+
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/main.js"></script>
+{% if request.session.get('user') %}
+<script>
+// Track which IDs we've already shown toasts for (persist across pages)
+const SEEN_KEY = 'inventory_seen_movement_ids';
+function getSeenIds() {
+    try {
+        return new Set(JSON.parse(sessionStorage.getItem(SEEN_KEY) || '[]'));
+    } catch { return new Set(); }
+}
+function saveSeenIds(set) {
+    sessionStorage.setItem(SEEN_KEY, JSON.stringify([...set]));
+}
+
+let isFirstLoad = true;
+
+// Show toast notification (pop-up)
+function showToast(item) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const isIn = item.movement_type === 'IN';
+    const bgClass = isIn ? 'bg-success' : 'bg-danger';
+    const icon = isIn ? 'bi-arrow-down-circle-fill' : 'bi-arrow-up-circle-fill';
+    const typeText = isIn ? 'Stock IN' : 'Stock OUT';
+
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white ${bgClass} border-0 mb-2`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <div class="d-flex align-items-center mb-1">
+                    <i class="bi ${icon} me-2" style="font-size: 1.2rem;"></i>
+                    <strong>${typeText}</strong>
+                </div>
+                <div><strong>${escapeHtml(item.product_name)}</strong> &mdash; Qty: ${item.quantity}</div>
+                ${item.note ? `<small>${escapeHtml(item.note)}</small>` : ''}
+                <div style="font-size: 0.7rem; opacity: 0.85;">${item.created_at}</div>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    container.appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl, { delay: 6000 });
+    toast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+
+// Play notification sound (short beep using Web Audio API)
+function playSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+    } catch {}
+}
+
+// Notification polling
+async function loadNotifications() {
+    try {
+        const res = await fetch('/notifications/count');
+        if (!res.ok) return;
+        const data = await res.json();
+        const badge = document.getElementById('notif-badge');
+        const list = document.getElementById('notif-list');
+        const empty = document.getElementById('notif-empty');
+
+        if (data.count > 0) {
+            badge.textContent = data.count;
+            badge.classList.remove('d-none');
+            empty.classList.add('d-none');
+
+            // Render dropdown items
+            list.innerHTML = data.items.map(item => `
+                <li>
+                    <a class="dropdown-item small" href="/stock">
+                        <div class="d-flex justify-content-between">
+                            <strong>${escapeHtml(item.product_name)}</strong>
+                            <span class="badge ${item.movement_type === 'IN' ? 'bg-success' : 'bg-danger'}">
+                                ${item.movement_type}
+                            </span>
+                        </div>
+                        <div class="text-muted">Qty: ${item.quantity} ${item.note ? '· ' + escapeHtml(item.note) : ''}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${item.created_at}</div>
+                    </a>
+                </li>
+            `).join('');
+
+            // Show toasts for items we haven't seen yet (skip first load)
+            const seen = getSeenIds();
+            const newItems = data.items.filter(i => !seen.has(i.id));
+            if (!isFirstLoad && newItems.length > 0) {
+                newItems.forEach(showToast);
+                playSound();
+            }
+            // Mark all current items as seen
+            data.items.forEach(i => seen.add(i.id));
+            saveSeenIds(seen);
+        } else {
+            badge.classList.add('d-none');
+            empty.classList.remove('d-none');
+            list.innerHTML = '';
+        }
+
+        isFirstLoad = false;
+    } catch (e) {
+        console.error('Failed to load notifications:', e);
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+async function markAllRead(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+        await fetch('/notifications/mark-read', { method: 'POST' });
+        sessionStorage.removeItem(SEEN_KEY);
+        loadNotifications();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Initial load + poll every 5 seconds (more responsive)
+loadNotifications();
+setInterval(loadNotifications, 5000);
+</script>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

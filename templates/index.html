@@ -1,0 +1,171 @@
+{% extends "master.html" %}
+{% block title %}Dashboard - Smart Inventory{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Products</h6>
+                        <h2>{{ total_products }}</h2>
+                    </div>
+                    <div class="display-6"><i class="bi bi-box"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Categories</h6>
+                        <h2>{{ total_categories }}</h2>
+                    </div>
+                    <div class="display-6"><i class="bi bi-tags"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Low Stock</h6>
+                        <h2>{{ low_stock_count }}</h2>
+                    </div>
+                    <div class="display-6"><i class="bi bi-exclamation-triangle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Out of Stock</h6>
+                        <h2>{{ out_of_stock_count }}</h2>
+                    </div>
+                    <div class="display-6"><i class="bi bi-x-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Low Stock Alerts -->
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Items</h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Min</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in low_stock_items %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td><span class="badge bg-warning text-dark">{{ p.quantity }}</span></td>
+                            <td>{{ p.min_stock }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No low stock items.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Out of Stock -->
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-x-circle"></i> Out of Stock Items</h5>
+            </div>
+            <div class="card-body">
+                {% if out_of_stock_items %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in out_of_stock_items %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.sku }}</td>
+                            <td><span class="badge bg-danger">OUT OF STOCK</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No out of stock items.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Movements -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Stock Movements</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_movements %}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                    <th>Note</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in recent_movements %}
+                <tr>
+                    <td>{{ m.product.name if m.product else 'N/A' }}</td>
+                    <td>
+                        {% if m.movement_type == 'IN' %}
+                        <span class="badge bg-success">IN</span>
+                        {% else %}
+                        <span class="badge bg-danger">OUT</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ m.quantity }}</td>
+                    <td>{{ m.note or '-' }}</td>
+                    <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No recent movements.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

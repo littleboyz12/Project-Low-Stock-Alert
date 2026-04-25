@@ -1,0 +1,92 @@
+{% extends "master.html" %}
+{% block title %}Stock Movement - Smart Inventory{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-arrow-left-right"></i> Stock Movement</h2>
+
+<div class="row">
+    <!-- Form -->
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add Movement</h5>
+            </div>
+            <div class="card-body">
+                <form action="/stock" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select name="product_id" class="form-select" required>
+                            <option value="">-- Select Product --</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.name }} (Qty: {{ p.quantity }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select name="movement_type" class="form-select" required>
+                            <option value="IN">Stock IN</option>
+                            <option value="OUT">Stock OUT</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" name="quantity" class="form-control" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note</label>
+                        <textarea name="note" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Record Movement
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movement History -->
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Movement History</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Product</th>
+                            <th>Type</th>
+                            <th>Qty</th>
+                            <th>Note</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movements %}
+                        <tr>
+                            <td>{{ m.id }}</td>
+                            <td>{{ m.product.name if m.product else 'N/A' }}</td>
+                            <td>
+                                {% if m.movement_type == 'IN' %}
+                                <span class="badge bg-success">IN</span>
+                                {% else %}
+                                <span class="badge bg-danger">OUT</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ m.quantity }}</td>
+                            <td>{{ m.note or '-' }}</td>
+                            <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if not movements %}
+                <p class="text-center text-muted">No movements recorded.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

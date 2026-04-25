@@ -1,0 +1,88 @@
+{% extends "master.html" %}
+{% block title %}Alerts - Smart Inventory{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-exclamation-triangle"></i> Stock Alerts</h2>
+
+<!-- Out of Stock -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-x-circle"></i> Out of Stock ({{ out_of_stock|length }} items)</h5>
+    </div>
+    <div class="card-body">
+        {% if out_of_stock %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Min Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in out_of_stock %}
+                <tr class="table-danger">
+                    <td>{{ p.name }}</td>
+                    <td><code>{{ p.sku }}</code></td>
+                    <td>{{ p.category.name if p.category else '-' }}</td>
+                    <td><span class="badge bg-danger">{{ p.quantity }}</span></td>
+                    <td>{{ p.min_stock }}</td>
+                    <td>
+                        <a href="/stock" class="btn btn-sm btn-success">
+                            <i class="bi bi-plus-circle"></i> Restock
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No out of stock items.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Low Stock -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock ({{ low_stock|length }} items)</h5>
+    </div>
+    <div class="card-body">
+        {% if low_stock %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Min Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in low_stock %}
+                <tr class="table-warning">
+                    <td>{{ p.name }}</td>
+                    <td><code>{{ p.sku }}</code></td>
+                    <td>{{ p.category.name if p.category else '-' }}</td>
+                    <td><span class="badge bg-warning text-dark">{{ p.quantity }}</span></td>
+                    <td>{{ p.min_stock }}</td>
+                    <td>
+                        <a href="/stock" class="btn btn-sm btn-success">
+                            <i class="bi bi-plus-circle"></i> Restock
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No low stock items.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
