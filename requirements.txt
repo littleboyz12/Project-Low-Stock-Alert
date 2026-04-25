@@ -3,3 +3,5 @@ sqlalchemy
 jinja2
 itsdangerous
 pyjwt
+psycopg2-binary
+python-dotenv

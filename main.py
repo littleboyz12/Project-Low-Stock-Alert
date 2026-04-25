@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 
 # Models & Database
@@ -9,7 +10,8 @@ app = FastAPI(title="Smart Inventory & Low Stock Alert")
 
 # Session Middleware
 from starlette.middleware.sessions import SessionMiddleware
-app.add_middleware(SessionMiddleware, secret_key="inventory-session-secret-123")
+SESSION_SECRET = os.environ.get("SESSION_SECRET_KEY", "inventory-session-secret-123")
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 # Static files
 from fastapi.staticfiles import StaticFiles
