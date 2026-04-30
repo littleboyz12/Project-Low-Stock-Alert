@@ -335,10 +335,6 @@ def stock_movement_page(request: Request, user=Depends(get_current_user)):
         return user
     db = SessionLocal()
     try:
-        # Mark all movements as read when visiting this page
-        db.query(StockMovement).filter(StockMovement.is_read == False).update({"is_read": True})
-        db.commit()
-
         products = db.query(Product).all()
         movements = db.query(StockMovement).order_by(StockMovement.created_at.desc()).limit(50).all()
         return templates.TemplateResponse(request, "stock_movement.html", {
