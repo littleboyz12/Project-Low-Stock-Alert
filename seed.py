@@ -1,8 +1,8 @@
 from database import SessionLocal, engine
 import models
 
-# Drop and recreate all tables (so new schema fields are added)
-models.Base.metadata.drop_all(bind=engine)
+# สร้างตารางถ้ายังไม่มี (ไม่ drop ของเดิม)
+models.Base.metadata.create_all(bind=engine)
 models.Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()

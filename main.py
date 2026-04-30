@@ -3,8 +3,22 @@ from fastapi import FastAPI
 
 # Models & Database
 import models
-from database import engine
+from database import engine, SessionLocal
 models.Base.metadata.create_all(bind=engine)
+
+# Auto-seed ถ้าฐานข้อมูลว่างเปล่า (ไม่มี user)
+def auto_seed():
+    db = SessionLocal()
+    try:
+        user_count = db.query(models.User).count()
+        if user_count == 0:
+            import seed  # รัน seed.py
+    except Exception as e:
+        print(f"Auto-seed error: {e}")
+    finally:
+        db.close()
+
+auto_seed()
 
 app = FastAPI(title="Smart Inventory & Low Stock Alert")
 
